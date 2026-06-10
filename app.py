@@ -30,7 +30,7 @@ iniciar_recursos_nltk()
 def cargar_y_limpiar_data():
     try:
         # Lee el archivo scopus.csv desde la raíz de tu GitHub
-        df = pd.read_csv('scopus.csv')
+        df = pd.read_csv('scopus_limpio.csv')
     except FileNotFoundError:
         st.error("❌ No se encontró el archivo 'scopus.csv' en la raíz del repositorio de GitHub.")
         st.stop()
