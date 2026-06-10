@@ -49,34 +49,46 @@ def cargar_y_limpiar_data():
 df = cargar_y_limpiar_data()
 
 # ==============================================================================
-# 3. BARRA LATERAL (SIDEBAR) - INGENIERÍA DE FILTROS CIENTÍFICOS
+# 3. BARRA LATERAL (SIDEBAR) - PANEL DE CONTROL COMPRENSIBLE Y GUIADO
 # ==============================================================================
 
-# Inyección de CSS avanzado para el tema oscuro y componentes tecnológicos
+# Inyección de CSS avanzado para una interfaz intuitiva con temática de IA
 st.sidebar.markdown(
     """
     <style>
     [data-testid="stSidebar"] {
         background-color: #0f1319;
     }
-    .sidebar-title {
+    .panel-title {
         color: #4fc3f7 !important;
         font-family: 'Segoe UI', sans-serif;
         font-weight: 700;
-        font-size: 18px;
+        font-size: 19px;
         letter-spacing: 0.5px;
         margin-bottom: 0px;
     }
-    .sidebar-subtitle {
-        color: #78909c !important;
+    .panel-subtitle {
+        color: #90a4ae !important;
         font-size: 12px;
-        margin-bottom: 20px;
+        margin-bottom: 15px;
     }
-    .filter-label {
+    .section-separator {
+        border-top: 1px solid #232d38;
+        margin-top: 15px;
+        margin-bottom: 15px;
+    }
+    .step-label {
         color: #ffffff !important;
         font-size: 13px;
         font-weight: 600;
-        margin-top: 15px;
+        margin-bottom: 5px;
+        display: block;
+    }
+    .instruction-text {
+        color: #b0bec5 !important;
+        font-size: 11px;
+        font-style: italic;
+        margin-bottom: 10px;
         display: block;
     }
     .metric-box {
@@ -101,33 +113,92 @@ st.sidebar.markdown(
     unsafe_allow_html=True
 )
 
-st.sidebar.markdown('<p class="sidebar-title">🤖 PANEL DE CONTROL IA</p>', unsafe_allow_html=True)
-st.sidebar.markdown('<p class="sidebar-subtitle">Filtros basados en variables de Scopus</p>', unsafe_allow_html=True)
+# Encabezado principal con lenguaje claro
+st.sidebar.markdown('<p class="panel-title">🤖 Filtros Inteligentes</p>', unsafe_allow_html=True)
+st.sidebar.markdown('<p class="panel-subtitle">Configura el entorno para actualizar los 6 gráficos</p>', unsafe_allow_html=True)
+st.sidebar.markdown('<div class="section-separator"></div>', unsafe_allow_html=True)
 
-# --- FILTRO 1: RANGO DE AÑOS (Columna: Year) ---
-st.sidebar.markdown('<span class="filter-label">📅 Ventana Temporal:</span>', unsafe_allow_html=True)
+# --- PASO 1: FILTRO TEMÁTICO DE HABILIDADES ---
+st.sidebar.markdown('<span class="step-label">1. ¿Qué habilidad deseas explorar?</span>', unsafe_allow_html=True)
+st.sidebar.markdown('<span class="instruction-text">Escribe un concepto clave para aislar las investigaciones que hablen de esa destreza humana.</span>', unsafe_allow_html=True)
+
+# Menú desplegable con sugerencias basadas en tu tema para facilitar la interacción
+habilidad_seleccionada = st.sidebar.selectbox(
+    "",
+    options=["Todas las habilidades", "Soft Skills (Habilidades Blandas)", "Creativity (Creatividad)", "Leadership (Liderazgo)", "Emotional Intelligence (Inteligencia Emocional)", "Escribir otra palabra..."]
+)
+
+# Lógica para habilitar escritura manual si eligen la última opción
+kw_busqueda = ""
+if habilidad_seleccionada == "Escribir otra palabra...":
+    kw_busqueda = st.sidebar.text_input("Escribe el término en inglés:", placeholder="Ej: Communication, Social...", key="input_manual").strip().lower()
+elif habilidad_seleccionada != "Todas las habilidades":
+    # Extraemos la palabra clave en inglés que está dentro del paréntesis o antes
+    kw_busqueda = habilidad_seleccionada.split("(")[0].replace("Soft Skills", "soft skills").strip().lower()
+
+st.sidebar.markdown('<div class="section-separator"></div>', unsafe_allow_html=True)
+
+# --- PASO 2: RANGO DE AÑOS ---
+st.sidebar.markdown('<span class="step-label">2. ¿Qué período de tiempo quieres revisar?</span>', unsafe_allow_html=True)
+st.sidebar.markdown('<span class="instruction-text">Ajusta los extremos para ver la evolución antes o después del auge de la IA moderna.</span>', unsafe_allow_html=True)
+
 min_ano = int(df['Year'].min()) if not df.empty else 2017
 max_ano = int(df['Year'].max()) if not df.empty else 2026
-rango_anos = st.sidebar.slider("", min_value=min_ano, max_value=max_ano, value=(min_ano, max_ano), key="sb_year")
+rango_anos = st.sidebar.slider("", min_value=min_ano, max_value=max_ano, value=(min_ano, max_ano), key="sb_year_guiado")
 
-# --- FILTRO 2: UMBRAL DE IMPACTO (Columna: Cited by) ---
-st.sidebar.markdown('<span class="filter-label">📈 Relevancia Mínima (Citas):</span>', unsafe_allow_html=True)
-max_citas = int(df['Cited by'].max()) if not df.empty else 100
-citas_minimas = st.sidebar.slider("", min_value=0, max_value=50, value=0, step=5, help="Filtra artículos que tengan al menos esta cantidad de citaciones.", key="sb_citas")
+st.sidebar.markdown('<div class="section-separator"></div>', unsafe_allow_html=True)
 
-# --- FILTRO 3: EXPLORADOR DE COMPETENCIAS (Columna: Author Keywords) ---
-st.sidebar.markdown('<span class="filter-label">💡 Buscar Habilidad / Concepto:</span>', unsafe_allow_html=True)
-kw_busqueda = st.sidebar.text_input("", placeholder="Ej: Leadership, Emotional, Creativity...", key="sb_kw").strip().lower()
+# --- PASO 3: CONDICIÓN DE ACCESO ---
+st.sidebar.markdown('<span class="step-label">3. ¿Cómo se financia la publicación?</span>', unsafe_allow_html=True)
+st.sidebar.markdown('<span class="instruction-text">Compara artículos de lectura gratuita frente a los que requieren suscripción paga.</span>', unsafe_allow_html=True)
 
-# --- FILTRO 4: CONDICIÓN DE ACCESO (Columna: Open Access) ---
-st.sidebar.markdown('<span class="filter-label">🔓 Restricción de Acceso:</span>', unsafe_allow_html=True)
 opciones_acceso = list(df['Tipo_Acceso'].unique())
 accesos_seleccionados = []
 for opcion in opciones_acceso:
-    if st.sidebar.checkbox(f" {opcion}", value=True, key=f"chk_{opcion}"):
+    # Mostramos nombres limpios eliminando los emoticones internos si los tuviera para no saturar
+    if st.sidebar.checkbox(f" Incluir {opcion}", value=True, key=f"chk_guiado_{opcion}"):
         accesos_seleccionados.append(opcion)
+
 if not accesos_seleccionados:
     accesos_seleccionados = opciones_acceso
+
+st.sidebar.markdown('<div class="section-separator"></div>', unsafe_allow_html=True)
+
+# --- PASO 4: RELEVANCIA CIENTÍFICA ---
+st.sidebar.markdown('<span class="step-label">4. Filtrar por impacto mínimo:</span>', unsafe_allow_html=True)
+
+citas_minimas = st.sidebar.select_slider(
+    "",
+    options=[0, 5, 10, 20, 50],
+    value=0,
+    help="Permite ocultar artículos que tienen muy pocas citaciones para concentrarte en los más influyentes."
+)
+
+# ==============================================================================
+# PROCESAMIENTO MATEMÁTICO DE LOS FILTROS GUIADOS
+# ==============================================================================
+# Filtro base: Año y Tipo de acceso
+mask = (df['Year'] >= rango_anos[0]) & (df['Year'] <= rango_anos[1]) & (df['Tipo_Acceso'].isin(accesos_seleccionados))
+
+# Filtro de impacto mínimo (citas)
+mask = mask & (df['Cited by'] >= citas_minimas)
+
+# Filtro de búsqueda por texto estructurado o manual
+if kw_busqueda:
+    mask = mask & (
+        (df['Author Keywords'].fillna('').astype(str).str.lower().str.contains(kw_busqueda)) |
+        (df['Abstract'].fillna('').astype(str).str.lower().str.contains(kw_busqueda))
+    )
+
+df_filtrado = df[mask]
+
+# --- CAJA DE ESTADO DE LA MUESTRA ---
+st.sidebar.markdown('<p style="color:#90a4ae; font-size:11px; font-weight:bold; margin-bottom:5px;">RESULTADO DEL FILTRO:</p>', unsafe_allow_html=True)
+col_sb1, col_sb2 = st.sidebar.columns(2)
+with col_sb1:
+    st.sidebar.markdown(f'<div class="metric-box"><div class="metric-num">{len(df_filtrado)}</div><div class="metric-txt">Artículos</div></div>', unsafe_allow_html=True)
+with col_sb2:
+    st.sidebar.markdown(f'<div class="metric-box"><div class="metric-num">{df_filtrado["Cited by"].sum():,}</div><div class="metric-txt">Citas Tot</div></div>', unsafe_allow_html=True)
 
 # ==============================================================================
 # APLICACIÓN DE LA LÓGICA DE FILTRADO MULTIVARIABLE
