@@ -49,39 +49,123 @@ def cargar_y_limpiar_data():
 df = cargar_y_limpiar_data()
 
 # ==============================================================================
-# 3. BARRA LATERAL (SIDEBAR) - FILTROS INTERACTIVOS
+# 3. BARRA LATERAL (SIDEBAR) - DISEÑO TECNOLÓGICO Y FILTROS OPTIMIZADOS
 # ==============================================================================
-st.sidebar.header("🔍 Panel de Filtros")
 
-# Filtro por Rango de Años
+# Inyección de estilos CSS avanzados para personalizar los componentes según el tema oscuro
+st.sidebar.markdown(
+    """
+    <style>
+    /* Estilizar el contenedor de la barra lateral */
+    [data-testid="stSidebar"] {
+        background-color: #111625;
+    }
+    
+    /* Títulos con estética de Inteligencia Artificial (Neón sutil) */
+    .sidebar-title {
+        color: #4fc3f7 !important;
+        font-family: 'Segoe UI', Roboto, Helvetica, sans-serif;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        margin-bottom: 5px;
+    }
+    
+    .sidebar-subtitle {
+        color: #b0bec5 !important;
+        font-size: 14px;
+        margin-bottom: 20px;
+    }
+
+    /* Estilo personalizado para las tarjetas de métricas en la barra lateral */
+    .metric-card {
+        background: linear-gradient(135deg, #1e2640 0%, #151b30 100%);
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid #263238;
+        text-align: center;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    }
+    .metric-val {
+        color: #00e676;
+        font-size: 20px;
+        font-weight: bold;
+    }
+    .metric-lbl {
+        color: #90a4ae;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# Encabezado personalizado de la barra lateral
+st.sidebar.markdown('<p class="sidebar-title">⚙️ PANEL DE CONTROL</p>', unsafe_allow_html=True)
+st.sidebar.markdown('<p class="sidebar-subtitle">Filtros dinámicos para el análisis bibliométrico</p>', unsafe_allow_html=True)
+
+# --- FILTRO 1: RANGO DE AÑOS ---
+st.sidebar.markdown("<b style='color:#ffffff;'>📅 Período de Publicación (Scopus):</b>", unsafe_allow_html=True)
 min_ano = int(df['Year'].min()) if not df.empty else 2000
 max_ano = int(df['Year'].max()) if not df.empty else 2026
-if min_ano == max_ano:
-    max_ano += 1
 
 rango_anos = st.sidebar.slider(
-    "Selecciona el Rango de Años (Year):",
+    "", # Dejamos la etiqueta nativa vacía porque ya usamos HTML arriba para tunear el color
     min_value=min_ano,
     max_value=max_ano,
-    value=(min_ano, max_ano)
+    value=(min_ano, max_ano),
+    help="Desplaza los nodos para ajustar la ventana del tiempo de la investigación académica."
 )
 
-# Filtro por Tipo de Acceso
-opciones_acceso = df['Tipo_Acceso'].unique()
-tipos_seleccionados = st.sidebar.multiselect(
-    "Selecciona el Tipo de Acceso (Open Access):",
-    options=opciones_acceso,
-    default=list(opciones_acceso)
-)
+st.sidebar.markdown("<br>", unsafe_allow_html=True)
 
-# APLICACIÓN DE FILTROS EN TIEMPO REAL
+# --- FILTRO 2: TIPO DE ACCESO (ESTILO CHECKBOX MINIMALISTA) ---
+st.sidebar.markdown("<b style='color:#ffffff;'>🔓 Condición de Acceso:</b>", unsafe_allow_html=True)
+opciones_acceso = list(df['Tipo_Acceso'].unique())
+
+accesos_seleccionados = []
+# Construimos filas ordenadas para los controles
+for opcion in opciones_acceso:
+    if st.sidebar.checkbox(f" {opcion}", value=True, key=f"chk_{opcion}"):
+        accesos_seleccionados.append(opcion)
+
+# Sistema de seguridad por si el usuario desmarca todo por error
+if not accesos_seleccionados:
+    accesos_seleccionados = opciones_acceso
+
+# --- FILTRADO DE LA DATA ---
 df_filtrado = df[
     (df['Year'] >= rango_anos[0]) & 
     (df['Year'] <= rango_anos[1]) & 
-    (df['Tipo_Acceso'].isin(tipos_seleccionados))
+    (df['Tipo_Acceso'].isin(accesos_seleccionados))
 ]
 
-# ==============================================================================
+# --- TARJETAS DE MÉTRICAS INTEGRADAS EN EL PANEL ---
+st.sidebar.markdown("<br><br>", unsafe_allow_html=True)
+st.sidebar.markdown("<p style='color:#90a4ae; font-size:12px; font-weight:bold; letter-spacing:1px;'>ESTADO DE LA MUESTRA</p>", unsafe_allow_html=True)
+
+col_sb1, col_sb2 = st.sidebar.columns(2)
+with col_sb1:
+    st.sidebar.markdown(
+        f"""
+        <div class="metric-card">
+            <div class="metric-val">{len(df_filtrado)}</div>
+            <div class="metric-lbl">Artículos</div>
+        </div>
+        """, 
+        unsafe_allow_html=True
+    )
+with col_sb2:
+    st.sidebar.markdown(
+        f"""
+        <div class="metric-card">
+            <div class="metric-val">{df_filtrado['Cited by'].sum():,}</div>
+            <div class="metric-lbl">Citas Tot</div>
+        </div>
+        """, 
+        unsafe_allow_html=True
+    )# ==============================================================================
 # 4. DISEÑO DE LA SECCIÓN SUPERIOR: TÍTULO Y DESCRIPCIÓN
 # ==============================================================================
 st.title("El rol de la IA en las habilidades blandas")
