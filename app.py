@@ -49,122 +49,109 @@ def cargar_y_limpiar_data():
 df = cargar_y_limpiar_data()
 
 # ==============================================================================
-# 3. BARRA LATERAL (SIDEBAR) - DISEÑO TECNOLÓGICO Y FILTROS OPTIMIZADOS
+# 3. BARRA LATERAL (SIDEBAR) - INGENIERÍA DE FILTROS CIENTÍFICOS
 # ==============================================================================
 
-# Inyección de estilos CSS avanzados para personalizar los componentes según el tema oscuro
+# Inyección de CSS avanzado para el tema oscuro y componentes tecnológicos
 st.sidebar.markdown(
     """
     <style>
-    /* Estilizar el contenedor de la barra lateral */
     [data-testid="stSidebar"] {
-        background-color: #111625;
+        background-color: #0f1319;
     }
-    
-    /* Títulos con estética de Inteligencia Artificial (Neón sutil) */
     .sidebar-title {
         color: #4fc3f7 !important;
-        font-family: 'Segoe UI', Roboto, Helvetica, sans-serif;
+        font-family: 'Segoe UI', sans-serif;
         font-weight: 700;
+        font-size: 18px;
         letter-spacing: 0.5px;
-        margin-bottom: 5px;
+        margin-bottom: 0px;
     }
-    
     .sidebar-subtitle {
-        color: #b0bec5 !important;
-        font-size: 14px;
+        color: #78909c !important;
+        font-size: 12px;
         margin-bottom: 20px;
     }
-
-    /* Estilo personalizado para las tarjetas de métricas en la barra lateral */
-    .metric-card {
-        background: linear-gradient(135deg, #1e2640 0%, #151b30 100%);
-        padding: 12px;
-        border-radius: 8px;
-        border: 1px solid #263238;
-        text-align: center;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    .filter-label {
+        color: #ffffff !important;
+        font-size: 13px;
+        font-weight: 600;
+        margin-top: 15px;
+        display: block;
     }
-    .metric-val {
+    .metric-box {
+        background: linear-gradient(135deg, #161c24 0%, #11151c 100%);
+        padding: 10px;
+        border-radius: 6px;
+        border: 1px solid #232d38;
+        text-align: center;
+    }
+    .metric-num {
         color: #00e676;
-        font-size: 20px;
+        font-size: 18px;
         font-weight: bold;
     }
-    .metric-lbl {
-        color: #90a4ae;
-        font-size: 11px;
+    .metric-txt {
+        color: #78909c;
+        font-size: 10px;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
     }
     </style>
     """,
     unsafe_allow_html=True
 )
 
-# Encabezado personalizado de la barra lateral
-st.sidebar.markdown('<p class="sidebar-title">⚙️ PANEL DE CONTROL</p>', unsafe_allow_html=True)
-st.sidebar.markdown('<p class="sidebar-subtitle">Filtros dinámicos para el análisis bibliométrico</p>', unsafe_allow_html=True)
+st.sidebar.markdown('<p class="sidebar-title">🤖 PANEL DE CONTROL IA</p>', unsafe_allow_html=True)
+st.sidebar.markdown('<p class="sidebar-subtitle">Filtros basados en variables de Scopus</p>', unsafe_allow_html=True)
 
-# --- FILTRO 1: RANGO DE AÑOS ---
-st.sidebar.markdown("<b style='color:#ffffff;'>📅 Período de Publicación (Scopus):</b>", unsafe_allow_html=True)
-min_ano = int(df['Year'].min()) if not df.empty else 2000
+# --- FILTRO 1: RANGO DE AÑOS (Columna: Year) ---
+st.sidebar.markdown('<span class="filter-label">📅 Ventana Temporal:</span>', unsafe_allow_html=True)
+min_ano = int(df['Year'].min()) if not df.empty else 2017
 max_ano = int(df['Year'].max()) if not df.empty else 2026
+rango_anos = st.sidebar.slider("", min_value=min_ano, max_value=max_ano, value=(min_ano, max_ano), key="sb_year")
 
-rango_anos = st.sidebar.slider(
-    "", # Dejamos la etiqueta nativa vacía porque ya usamos HTML arriba para tunear el color
-    min_value=min_ano,
-    max_value=max_ano,
-    value=(min_ano, max_ano),
-    help="Desplaza los nodos para ajustar la ventana del tiempo de la investigación académica."
-)
+# --- FILTRO 2: UMBRAL DE IMPACTO (Columna: Cited by) ---
+st.sidebar.markdown('<span class="filter-label">📈 Relevancia Mínima (Citas):</span>', unsafe_allow_html=True)
+max_citas = int(df['Cited by'].max()) if not df.empty else 100
+citas_minimas = st.sidebar.slider("", min_value=0, max_value=50, value=0, step=5, help="Filtra artículos que tengan al menos esta cantidad de citaciones.", key="sb_citas")
 
-st.sidebar.markdown("<br>", unsafe_allow_html=True)
+# --- FILTRO 3: EXPLORADOR DE COMPETENCIAS (Columna: Author Keywords) ---
+st.sidebar.markdown('<span class="filter-label">💡 Buscar Habilidad / Concepto:</span>', unsafe_allow_html=True)
+kw_busqueda = st.sidebar.text_input("", placeholder="Ej: Leadership, Emotional, Creativity...", key="sb_kw").strip().lower()
 
-# --- FILTRO 2: TIPO DE ACCESO (ESTILO CHECKBOX MINIMALISTA) ---
-st.sidebar.markdown("<b style='color:#ffffff;'>🔓 Condición de Acceso:</b>", unsafe_allow_html=True)
+# --- FILTRO 4: CONDICIÓN DE ACCESO (Columna: Open Access) ---
+st.sidebar.markdown('<span class="filter-label">🔓 Restricción de Acceso:</span>', unsafe_allow_html=True)
 opciones_acceso = list(df['Tipo_Acceso'].unique())
-
 accesos_seleccionados = []
-# Construimos filas ordenadas para los controles
 for opcion in opciones_acceso:
     if st.sidebar.checkbox(f" {opcion}", value=True, key=f"chk_{opcion}"):
         accesos_seleccionados.append(opcion)
-
-# Sistema de seguridad por si el usuario desmarca todo por error
 if not accesos_seleccionados:
     accesos_seleccionados = opciones_acceso
 
-# --- FILTRADO DE LA DATA ---
-df_filtrado = df[
-    (df['Year'] >= rango_anos[0]) & 
-    (df['Year'] <= rango_anos[1]) & 
-    (df['Tipo_Acceso'].isin(accesos_seleccionados))
-]
+# ==============================================================================
+# APLICACIÓN DE LA LÓGICA DE FILTRADO MULTIVARIABLE
+# ==============================================================================
+# 1. Filtro por año y tipo de acceso
+mask = (df['Year'] >= rango_anos[0]) & (df['Year'] <= rango_anos[1]) & (df['Tipo_Acceso'].isin(accesos_seleccionados))
 
-# --- TARJETAS DE MÉTRICAS INTEGRADAS EN EL PANEL ---
-st.sidebar.markdown("<br><br>", unsafe_allow_html=True)
-st.sidebar.markdown("<p style='color:#90a4ae; font-size:12px; font-weight:bold; letter-spacing:1px;'>ESTADO DE LA MUESTRA</p>", unsafe_allow_html=True)
+# 2. Filtro por umbral de citación
+mask = mask & (df['Cited by'] >= citas_minimas)
 
+# 3. Filtro por coincidencia de texto en Keywords (si el usuario escribió algo)
+if kw_busqueda:
+    mask = mask & (df['Author Keywords'].fillna('').astype(str).str.lower().str.contains(kw_busqueda))
+
+df_filtrado = df[mask]
+
+# --- CONTADORES DE CONTROL EN TIEMPO REAL ---
+st.sidebar.markdown("<br>", unsafe_allow_html=True)
 col_sb1, col_sb2 = st.sidebar.columns(2)
 with col_sb1:
-    st.sidebar.markdown(
-        f"""
-        <div class="metric-card">
-            <div class="metric-val">{len(df_filtrado)}</div>
-            <div class="metric-lbl">Artículos</div>
-        </div>
-        """, 
-        unsafe_allow_html=True
-    )
+    st.sidebar.markdown(f'<div class="metric-box"><div class="metric-num">{len(df_filtrado)}</div><div class="metric-txt">Artículos</div></div>', unsafe_allow_html=True)
 with col_sb2:
-    st.sidebar.markdown(
-        f"""
-        <div class="metric-card">
-            <div class="metric-val">{df_filtrado['Cited by'].sum():,}</div>
-            <div class="metric-lbl">Citas Tot</div>
-        </div>
-        """, 
-        unsafe_allow_html=True
+    st.sidebar.markdown(f'<div class="metric-box"><div class="metric-num">{df_filtrado["Cited by"].sum():,}</div><div class="metric-txt">Citas Tot</div></div>', unsafe_allow_html=True)
+    
     )# ==============================================================================
 # 4. DISEÑO DE LA SECCIÓN SUPERIOR: TÍTULO Y DESCRIPCIÓN
 # ==============================================================================
