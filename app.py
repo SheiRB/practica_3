@@ -151,8 +151,8 @@ with col_sb1:
     st.sidebar.markdown(f'<div class="metric-box"><div class="metric-num">{len(df_filtrado)}</div><div class="metric-txt">Artículos</div></div>', unsafe_allow_html=True)
 with col_sb2:
     st.sidebar.markdown(f'<div class="metric-box"><div class="metric-num">{df_filtrado["Cited by"].sum():,}</div><div class="metric-txt">Citas Tot</div></div>', unsafe_allow_html=True)
-    
-    )# ==============================================================================
+
+# ==============================================================================
 # 4. DISEÑO DE LA SECCIÓN SUPERIOR: TÍTULO Y DESCRIPCIÓN
 # ==============================================================================
 st.title("El rol de la IA en las habilidades blandas")
