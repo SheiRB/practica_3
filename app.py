@@ -29,10 +29,10 @@ iniciar_recursos_nltk()
 @st.cache_data
 def cargar_y_limpiar_data():
     try:
-        # Lee el archivo scopus.csv desde la raíz de tu GitHub
+        # Lee el archivo scopus_limpio.csv desde la raíz de tu GitHub
         df = pd.read_csv('scopus_limpio.csv')
     except FileNotFoundError:
-        st.error("❌ No se encontró el archivo 'scopus.csv' en la raíz del repositorio de GitHub.")
+        st.error("❌ No se encontró el archivo 'scopus_limpio.csv' en la raíz del repositorio de GitHub.")
         st.stop()
         
     # Limpieza y tipado de columnas críticas
@@ -155,7 +155,6 @@ st.sidebar.markdown('<span class="instruction-text">Compara artículos de lectur
 opciones_acceso = list(df['Tipo_Acceso'].unique())
 accesos_seleccionados = []
 for opcion in opciones_acceso:
-    # Mostramos nombres limpios eliminando los emoticones internos si los tuviera para no saturar
     if st.sidebar.checkbox(f" Incluir {opcion}", value=True, key=f"chk_guiado_{opcion}"):
         accesos_seleccionados.append(opcion)
 
@@ -175,15 +174,15 @@ citas_minimas = st.sidebar.select_slider(
 )
 
 # ==============================================================================
-# PROCESAMIENTO MATEMÁTICO DE LOS FILTROS GUIADOS
+# PROCESAMIENTO MATEMÁTICO DE LOS FILTROS GUIADOS (ÚNICO Y CORREGIDO)
 # ==============================================================================
-# Filtro base: Año y Tipo de acceso
+# 1. Filtro base: Año y Tipo de acceso
 mask = (df['Year'] >= rango_anos[0]) & (df['Year'] <= rango_anos[1]) & (df['Tipo_Acceso'].isin(accesos_seleccionados))
 
-# Filtro de impacto mínimo (citas)
+# 2. Filtro por umbral de citación
 mask = mask & (df['Cited by'] >= citas_minimas)
 
-# Filtro de búsqueda por texto estructurado o manual
+# 3. Filtro por coincidencia de texto (tanto en Author Keywords como en Abstract)
 if kw_busqueda:
     mask = mask & (
         (df['Author Keywords'].fillna('').astype(str).str.lower().str.contains(kw_busqueda)) |
@@ -192,7 +191,8 @@ if kw_busqueda:
 
 df_filtrado = df[mask]
 
-# --- CAJA DE ESTADO DE LA MUESTRA ---
+# --- CAJA DE ESTADO DE LA MUESTRA EN TIEMPO REAL ---
+st.sidebar.markdown('<div class="section-separator"></div>', unsafe_allow_html=True)
 st.sidebar.markdown('<p style="color:#90a4ae; font-size:11px; font-weight:bold; margin-bottom:5px;">RESULTADO DEL FILTRO:</p>', unsafe_allow_html=True)
 col_sb1, col_sb2 = st.sidebar.columns(2)
 with col_sb1:
@@ -200,28 +200,6 @@ with col_sb1:
 with col_sb2:
     st.sidebar.markdown(f'<div class="metric-box"><div class="metric-num">{df_filtrado["Cited by"].sum():,}</div><div class="metric-txt">Citas Tot</div></div>', unsafe_allow_html=True)
 
-# ==============================================================================
-# APLICACIÓN DE LA LÓGICA DE FILTRADO MULTIVARIABLE
-# ==============================================================================
-# 1. Filtro por año y tipo de acceso
-mask = (df['Year'] >= rango_anos[0]) & (df['Year'] <= rango_anos[1]) & (df['Tipo_Acceso'].isin(accesos_seleccionados))
-
-# 2. Filtro por umbral de citación
-mask = mask & (df['Cited by'] >= citas_minimas)
-
-# 3. Filtro por coincidencia de texto en Keywords (si el usuario escribió algo)
-if kw_busqueda:
-    mask = mask & (df['Author Keywords'].fillna('').astype(str).str.lower().str.contains(kw_busqueda))
-
-df_filtrado = df[mask]
-
-# --- CONTADORES DE CONTROL EN TIEMPO REAL ---
-st.sidebar.markdown("<br>", unsafe_allow_html=True)
-col_sb1, col_sb2 = st.sidebar.columns(2)
-with col_sb1:
-    st.sidebar.markdown(f'<div class="metric-box"><div class="metric-num">{len(df_filtrado)}</div><div class="metric-txt">Artículos</div></div>', unsafe_allow_html=True)
-with col_sb2:
-    st.sidebar.markdown(f'<div class="metric-box"><div class="metric-num">{df_filtrado["Cited by"].sum():,}</div><div class="metric-txt">Citas Tot</div></div>', unsafe_allow_html=True)
 
 # ==============================================================================
 # 4. DISEÑO DE LA SECCIÓN SUPERIOR: TÍTULO Y DESCRIPCIÓN
@@ -291,11 +269,9 @@ col_c, col_d = st.columns(2)
 
 with col_c:
     st.subheader("Gráfico 3: Distribución Porcentual de las Top 7 Keywords")
-    # Procesamiento de la columna 'Author Keywords'
     keywords_lista = []
     for kw_celda in df_filtrado['Author Keywords'].dropna():
         if kw_celda != 'Sin información':
-            # Separar por punto y coma o coma según guarde Scopus
             for kw in re.split(r'[;,]', str(kw_celda)):
                 kw_limpio = kw.strip().title()
                 if kw_limpio:
