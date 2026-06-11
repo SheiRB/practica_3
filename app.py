@@ -356,3 +356,36 @@ with col_f:
         st.pyplot(fig6)
     else:
         st.info("Sin datos de texto suficientes para extraer bigramas.")
+
+
+# ==============================================================================
+# 6. SECCIÓN FINAL: EXPLORADOR DE ARTÍCULOS CON ABSTRACT INTEGRADO
+# ==============================================================================
+st.markdown("---")
+st.markdown("## 📄 Explorador Clínico de Registros")
+st.write("Utiliza el buscador dinámico para inspeccionar el contenido completo indexado, incluyendo los resúmenes originales de Scopus.")
+
+# Buscador de texto interactivo
+busqueda_tabla = st.text_input(
+    "🔍 Filtrar catálogo por coincidencia de texto:", 
+    placeholder="Escribe un concepto o apellido (ej. Creativity, Emotional, Psychology...)",
+    key="buscador_tabla_final_abstract"
+).strip().lower()
+
+# Filtrar tabla en función del texto ingresado
+if busqueda_tabla:
+    df_tabla_final = df_filtrado[
+        (df_filtrado['Title'].fillna('').astype(str).str.lower().str.contains(busqueda_tabla)) |
+        (df_filtrado['Authors'].fillna('').astype(str).str.lower().str.contains(busqueda_tabla)) |
+        (df_filtrado['Abstract'].fillna('').astype(str).str.lower().str.contains(busqueda_tabla))
+    ]
+else:
+    df_tabla_final = df_filtrado
+
+# Desplegar la tabla con las 3 columnas solicitadas: Title, Authors y Abstract
+if not df_tabla_final.empty:
+    # Se añade la columna 'Abstract' de acuerdo al requerimiento técnico
+    vista_tabla = df_tabla_final[['Title', 'Authors', 'Abstract']].reset_index(drop=True)
+    st.dataframe(vista_tabla, use_container_width=True)
+else:
+    st.info("Ningún registro coincide exactamente con el criterio de búsqueda ingresado.")
